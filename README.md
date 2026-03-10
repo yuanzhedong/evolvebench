@@ -29,17 +29,26 @@ No pre-built image required — the task's `environment/Dockerfile` is self-cont
 Agents are pluggable. Each agent lives in `agents/` and implements Harbor's `BaseInstalledAgent`. **CocoaAgent** was integrated by following Harbor's [installed agents](https://harborframework.com/docs/agents#installed-agents) guide. It is generic — it takes the task instruction from Harbor and runs it inside the container. No task-specific logic in the agent. The Docker build uses repo root as context and copies directly from there (no sync needed).
 
 ```
-agents/
-├── cocoa_agent/              # CocoaAgent — default, works with any task
-configs/                       # Shared agent configs (e.g. skill-phase1.json)
-tasks/<task-name>/
-├── instruction.md
-├── task.toml
-├── environment/
-│   ├── Dockerfile            # Builds from repo root, COPYs agents/ and configs/
-│   └── docker-compose.yaml   # Sets build context to repo root
-├── solution/
-└── tests/
+evolvebench/
+├── run.sh                    # Main entry: harbor run with CocoaAgent
+├── agents/
+│   └── cocoa_agent/          # CocoaAgent — default, works with any task
+├── configs/
+│   └── skill-phase1.json    # Shared agent configs
+├── scripts/
+│   └── prepare-modal-context.sh   # Copy agents+configs for Modal build
+└── tasks/
+    └── <task-name>/
+        ├── instruction.md
+        ├── task.toml
+        ├── environment/
+        │   ├── Dockerfile          # Builds from repo root, COPYs agents/ and configs/
+        │   └── docker-compose.yaml # Sets build context to repo root (Docker only)
+        ├── solution/
+        │   └── solve.sh            # Oracle: produces result.json for verifier
+        └── tests/
+            ├── test.sh             # Harbor verifier: LLM-as-judge, writes reward
+            └── test_task.py        # Rubric evaluation logic
 ```
 
 ## Adding a New Task
