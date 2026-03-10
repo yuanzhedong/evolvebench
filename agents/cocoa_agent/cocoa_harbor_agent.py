@@ -1,6 +1,7 @@
 """
 Harbor BaseInstalledAgent wrapper for CocoaAgent.
 All cocoa-agent glue lives in agents/cocoa_agent/.
+CocoaAgent is pre-installed in the Docker image — no install step needed.
 """
 import json
 import shlex
@@ -8,6 +9,7 @@ import os
 from pathlib import Path
 
 from harbor.agents.installed.base import BaseInstalledAgent, ExecInput
+from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
 
 # Paths inside the container
@@ -25,7 +27,12 @@ class CocoaHarborAgent(BaseInstalledAgent):
 
     @property
     def _install_agent_template_path(self) -> Path:
-        return Path(__file__).parent / "install_cocoa_agent.sh.j2"
+        # Required by BaseInstalledAgent but unused — we override setup() to skip install
+        return Path(__file__).resolve()
+
+    async def setup(self, environment: BaseEnvironment) -> None:
+        """Skip install — CocoaAgent is pre-installed in the Docker image."""
+        await environment.exec(command="mkdir -p /installed-agent")
 
     def create_run_agent_commands(self, instruction: str) -> list[ExecInput]:
         config_path = getattr(self, "COCOA_CONFIG", None) or os.environ.get("COCOA_CONFIG", DEFAULT_CONFIG)
