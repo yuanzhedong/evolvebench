@@ -1,0 +1,18 @@
+# Reduce Docker build context: only agents/, configs/, and tasks/ are needed.
+.git
+.gitignore
+*.md
+results/
+jobs/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.envrc
+*.log
+.DS_Store
+.idea/
+.vscode/
+.cursor/
+node_modules/

@@ -1,0 +1,40 @@
+# Run outputs
+jobs/
+results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Environment & secrets
+.env
+.envrc
+.env.local
+*.pem
+
+# Agent artifacts
+agent_screenshot*.png
+agent_screenshots.html
+cookies/
+
+# IDE & OS
+.idea/
+.vscode/
+.cursor/
+.DS_Store
+*.swp
+*.swo
+
+# Logs & cache
+*.log
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

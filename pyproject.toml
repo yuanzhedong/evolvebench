@@ -1,0 +1,9 @@
+[project]
+name = "harbor-evolve-bench"
+version = "0.1.0"
+description = "Harbor runner for EvolveBench task-01 with CocoaAgent"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "harbor>=0.1.0",
+]
