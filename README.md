@@ -1,4 +1,4 @@
-# harbor-evolve-bench
+# EvolveBench
 
 Run **any agent** with [Harbor](https://harborframework.com/docs). Start with **CocoaAgent** — a generic agent that works with any task ([official cocoabench/cocoa-agent](https://github.com/cocoabench/cocoa-agent)).
 
@@ -26,7 +26,7 @@ No pre-built image required — the task's `environment/Dockerfile` is self-cont
 
 ## Structure
 
-Agents are pluggable. Each agent lives in `agents/` and implements Harbor's `BaseInstalledAgent`. **CocoaAgent** is generic — it takes the task instruction from Harbor and runs it inside the container. No task-specific logic in the agent. The Docker build uses repo root as context and copies directly from there (no sync needed).
+Agents are pluggable. Each agent lives in `agents/` and implements Harbor's `BaseInstalledAgent`. **CocoaAgent** was integrated by following Harbor's [installed agents](https://harborframework.com/docs/agents#installed-agents) guide. It is generic — it takes the task instruction from Harbor and runs it inside the container. No task-specific logic in the agent. The Docker build uses repo root as context and copies directly from there (no sync needed).
 
 ```
 agents/
@@ -88,6 +88,29 @@ For `ENV=modal`, run `./scripts/prepare-modal-context.sh` first (or let `run.sh`
 ## Task
 
 **task-01-im-looking-for-backpack-under**: Find 3–5 backpacks under $75 with features similar to https://www.amazon.com/dp/B09YRC9Y3G and summarize key features and prices.
+
+### Sample output (rubric scores)
+
+```
+=== Customized Rubric Score: 3.8/5 ===
+  source_navigation: 3/5
+  budget_compliance: 5/5
+  recommendation_count: 5/5
+  feature_comparison: 3/5
+  actionability: 3/5
+
+Customized reasoning: The agent claims to have accessed the original Amazon URL, but the provided steps show limited interaction, resulting in a vague understanding of the product's specific features, thus a score of 3 for source_navigation. All alternative products are priced under $75, earning a score of 5 for budget_compliance. The agent presented exactly 3 distinct product alternatives, scoring a 5 for recommendation_count. However, the feature comparison against the original product is basic, only generally mentioning shared features like compartments and water resistance without detail, resulting in a score of 3 for feature_comparison. Finally, the response is structured to some extent but lacks precise product identifiers or direct links, only justifying a score of 3 for actionability.
+
+=== Generic Rubric Score: 2.6/5 ===
+  task_completion: 3/5
+  information_quality: 2/5
+  response_quality: 2/5
+  completeness: 3/5
+
+Generic reasoning: The AI agent provided three backpack options under $75 with features that partially match the original. However, the response lacks a thorough comparison to the original backpack, and it did not fully research or verify all features of the original item. The information is somewhat vague and lacks proper citations or links to the product pages for verification. The structure is adequate but lacks detail and depth, making it less useful for making an informed decision.
+
+Evaluation: passed=True  score=3.80
+```
 
 ## License
 
