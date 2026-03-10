@@ -1,20 +1,23 @@
 # harbor-evolve-bench
 
-Run Harbor tasks using **CocoaAgent** — a generic agent that works with any task. Uses [official cocoabench/cocoa-agent](https://github.com/cocoabench/cocoa-agent).
+Run **any agent** with [Harbor](https://harborframework.com/docs). Start with **CocoaAgent** — a generic agent that works with any task ([official cocoabench/cocoa-agent](https://github.com/cocoabench/cocoa-agent)).
 
 ## Prerequisites
 
 - Docker
 - [Harbor](https://harborframework.com/docs) (`uv tool install harbor` or `pip install harbor`)
-- OpenAI API key (used by both the agent and the LLM-as-judge verifier; passed via `[verifier.env]` in task.toml)
+- OpenAI API key (used by both the agent and the LLM-as-judge verifier)
+- For Modal cloud runs: `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` from [modal.com/settings/tokens](https://modal.com/settings/tokens)
+
+Optional: create a `.env` file from `.env.example` with your keys (`.env` is gitignored). `run.sh` loads it automatically.
 
 ## Quick Start
 
 ```bash
-# 1. Set API key
+# 1. Set API key (or use .env — see Prerequisites)
 export OPENAI_API_KEY=sk-your-key
 
-# 2. Run a task (Harbor builds the image automatically; works locally and on cloud)
+# 2. Run a task with CocoaAgent (default)
 ./run.sh                                    # task-01, default output
 ./run.sh tasks/task-01-im-looking-for-backpack-under results/my-run
 ```
@@ -23,11 +26,12 @@ No pre-built image required — the task's `environment/Dockerfile` is self-cont
 
 ## Structure
 
-The **cocoa agent is generic** — it takes the task instruction from Harbor and runs it inside the container. No task-specific logic in the agent. Agent files live in `agents/`; the Docker build uses repo root as context and copies directly from there (no sync needed).
+Agents are pluggable. Each agent lives in `agents/` and implements Harbor's `BaseInstalledAgent`. **CocoaAgent** is generic — it takes the task instruction from Harbor and runs it inside the container. No task-specific logic in the agent. The Docker build uses repo root as context and copies directly from there (no sync needed).
 
 ```
-agents/cocoa_agent/            # Agent glue (single source of truth)
-configs/                       # Agent configs (e.g. skill-phase1.json)
+agents/
+├── cocoa_agent/              # CocoaAgent — default, works with any task
+configs/                       # Shared agent configs (e.g. skill-phase1.json)
 tasks/<task-name>/
 ├── instruction.md
 ├── task.toml
@@ -64,10 +68,22 @@ COCOA_CONFIG=/cocoa-agent/configs/harbor-config.json ./run.sh
 # task_path defaults to tasks/task-01-im-looking-for-backpack-under
 # output_dir defaults to results/skill-phase1-test
 
-# Override agent, model, or config
-AGENT=agents.cocoa_agent:CocoaHarborAgent MODEL=openai/gpt-4.1-mini ./run.sh
+# Run a different agent (default: CocoaAgent)
+AGENT=agents.cocoa_agent:CocoaHarborAgent ./run.sh
+
+# Run on Modal (cloud) instead of local Docker
+ENV=modal ./run.sh
+
+# Override model or CocoaAgent config
+MODEL=openai/gpt-4.1-mini ./run.sh
 COCOA_CONFIG=/cocoa-agent/configs/harbor-config.json ./run.sh
 ```
+
+Supported `ENV` values: `docker` (default), `modal`, `e2b`, `daytona`, `runloop`, `gke`. To add more agents, see `agents/README.md`.
+
+### Modal (cloud)
+
+For `ENV=modal`, run `./scripts/prepare-modal-context.sh` first (or let `run.sh` call it automatically). This copies `agents/` and `configs/` into the task's `environment/` since Modal uses that as the build context. The first Modal run takes ~10–20 minutes to build the image (Playwright + Chromium). If the image build fails, run with `--debug` to see build logs.
 
 ## Task
 

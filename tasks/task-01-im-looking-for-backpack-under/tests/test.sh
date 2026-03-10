@@ -70,6 +70,9 @@ eval_output = {
 with open("/logs/verifier/reward.json", "w") as f:
     json.dump(eval_output, f, indent=2)
 
-print(f"Evaluation: passed={passed}  score={score:.2f}")
+feedback = eval_result.get("feedback", "")
+if feedback:
+    print(feedback)
+print(f"\nEvaluation: passed={passed}  score={score:.2f}")
 sys.exit(0 if passed else 1)
 PYEOF

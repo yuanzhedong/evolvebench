@@ -5,9 +5,9 @@
 #   ./run.sh [task_path] [output_dir]
 #
 # Examples:
-#   ./run.sh                              # task-01, results/skill-phase1-test
-#   ./run.sh tasks/task-01-im-looking-for-backpack-under
-#   ./run.sh tasks/task-01-im-looking-for-backpack-under results/my-run
+#   ./run.sh                                    # task-01, local docker
+#   ENV=modal ./run.sh                          # run on Modal (cloud)
+#   ./run.sh tasks/... results/my-run
 #
 # Prerequisites:
 #   Set API key: export OPENAI_API_KEY=sk-...
@@ -17,6 +17,13 @@
 
 set -e
 cd "$(dirname "$0")"
+
+# Load .env if present (Modal + OpenAI keys; .env is gitignored)
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+fi
 
 if [ -z "$OPENAI_API_KEY" ]; then
     echo "Error: OPENAI_API_KEY must be set (agent and LLM judge need it)"
@@ -32,15 +39,32 @@ TASK_PATH="${1:-tasks/task-01-im-looking-for-backpack-under}"
 OUTPUT_DIR="${2:-results/skill-phase1-test}"
 AGENT="${AGENT:-agents.cocoa_agent:CocoaHarborAgent}"
 MODEL="${MODEL:-openai/gpt-4.1-mini}"
+ENV="${ENV:-docker}"
 
-AK=""
-[ -n "$OPENAI_API_KEY" ] && AK="--ak OPENAI_API_KEY=$OPENAI_API_KEY"
-[ -n "$COCOA_MAX_ITERATIONS" ] && AK="$AK --ak COCOA_MAX_ITERATIONS=$COCOA_MAX_ITERATIONS"
+AK_ARGS=()
+[ -n "$OPENAI_API_KEY" ] && AK_ARGS+=(--ak "OPENAI_API_KEY=$OPENAI_API_KEY")
+[ -n "$COCOA_MAX_ITERATIONS" ] && AK_ARGS+=(--ak "COCOA_MAX_ITERATIONS=$COCOA_MAX_ITERATIONS")
 
-echo "=== Harbor run: task=$TASK_PATH agent=$AGENT model=$MODEL ==="
+if [ "$ENV" = "modal" ]; then
+  ./scripts/prepare-modal-context.sh "$TASK_PATH"
+fi
+
+echo "=== Harbor run: task=$TASK_PATH agent=$AGENT model=$MODEL env=$ENV ==="
 harbor run \
   -p "$TASK_PATH" \
   --agent-import-path "$AGENT" \
   -m "$MODEL" \
+  -e "$ENV" \
   -o "$OUTPUT_DIR" \
-  $AK
+  "${AK_ARGS[@]}"
+
+# Print rubric scores from verifier (Harbor captures to verifier/test-stdout.txt but doesn't show it)
+LATEST_RUN=$(ls -td "$OUTPUT_DIR"/*/ 2>/dev/null | head -1)
+if [ -n "$LATEST_RUN" ]; then
+  STDOUT=$(find "$LATEST_RUN" -path "*/verifier/test-stdout.txt" 2>/dev/null | head -1)
+  if [ -n "$STDOUT" ] && [ -f "$STDOUT" ]; then
+    echo ""
+    echo "=== Rubric Scores ==="
+    cat "$STDOUT"
+  fi
+fi
